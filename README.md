@@ -13,7 +13,7 @@ $ docker-compose up -d
 ```
 this will take awhile to download all the necessary images needed and to create all the containers.
 
-- After finished with **docker-compose**. It will create 4 containers and one of the is **surplus-app**. We'll run all the artisan and composer command inside this container. To access the container, type the following command on your command line.
+- After finished with **docker-compose**. It will create 4 containers (**surplus-app**, **surplus-nginx**, **surplus-mysql**, **surplus-adminer**). We'll run all the composer and artisan command inside **surplus-app** container. To access the container, type the following command on your command line.
 ```sh
 $ docker exec -it surplus-app /bin/bash
 ```
