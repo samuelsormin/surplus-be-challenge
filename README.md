@@ -17,7 +17,24 @@ this will take awhile to download all the necessary images needed and to create 
 ```sh
 $ docker exec -it surplus-app /bin/bash
 ```
-- After accessing the container, we can run all this following commands on the container terminal to run the project.
+- After accessing the container, we need to set the .env file first. Run this following command to copy .env.example content to .env.
+```sh
+$ cp .env.example .env
+```
+- Generate the application key
+```sh
+$ php artisan key:generate
+```
+- And then set DB connection in .env follows:
+```php
+DB_CONNECTION=mysql
+DB_HOST=surplus-mysql
+DB_PORT=3306
+DB_DATABASE=surplus
+DB_USERNAME=root
+DB_PASSWORD=secret
+```
+- We can run all this following commands on the container's terminal to run the project.
 
 ```sh
 $ composer install
