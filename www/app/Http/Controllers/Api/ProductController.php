@@ -170,4 +170,111 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    public function update(Request $request, $id): JsonResponse
+    {
+        // validate request
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'description' => 'string',
+            'enable' => 'boolean',
+            'category_id' => 'integer',
+            'image' => 'image|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            $errorMsg = $validator->errors()->all();
+
+            return response()->json([
+                "status" => false,
+                "message" => implode(" | ", $errorMsg),
+                "data" => []
+            ], 400);
+        }
+
+        // inquiry product data
+        $product = Product::find($id);
+
+        if (empty($product)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data not found',
+                'data' => []
+            ], 200);
+        }
+
+        // update data to db
+        DB::beginTransaction();
+        try {
+            $productData = [
+                'name' => empty($request->name) ? $product->name : $request->name,
+                'description' => empty($request->description) ? $product->description : $request->description,
+                'enable' => ($request->enable == '') ? $product->enable : $request->enable,
+            ];
+
+            if (!empty($productData)) $product->update($productData);
+
+            if ($request->hasFile('image')) {
+                // save image
+                $path = storage_path('app/public/images/');
+
+                $file = $request->file('image');
+                $filename = date('YmdHis') . $file->getClientOriginalName();
+                $file->move($path, $filename);
+
+                $imageData = [
+                    'name' => $request->name,
+                    'file' => sprintf('%s%s', $path, $filename),
+                    'enable' => 1
+                ];
+                
+                $image = Image::find($product->productImage->image->id);
+                
+                $image->update($imageData);
+            }
+
+            if (!empty($request->category_id)) {
+                $categoryProductData = [
+                    'category_id' => $request->category_id
+                ];
+
+                $categoryProduct = CategoryProduct::find($product->categoryProduct->id);
+
+                $categoryProduct->update($categoryProductData);
+            }
+
+            DB::commit();
+
+            $product = Product::find($id);
+
+            $category = $product->categoryProduct->category;
+            $product->category = $category;
+
+            $image = $product->productImage->image;
+            $product->image = $image;
+
+            unset($product->productImage);
+            unset($product->categoryProduct);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data updated succesfully.',
+                'data' => $product
+            ], 200);
+            //
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            Log::error('Failed update data', [
+                'msg' => $th->getMessage(),
+                'trace' => $th->getTraceAsString()
+            ]);
+
+            return response()->json([
+                "status" => false,
+                "message" => 'Failed update data',
+                "data" => []
+            ], 500);
+        }
+    }
 }
