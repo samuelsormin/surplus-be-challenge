@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Models\CategoryProduct;
 use App\Models\Image;
 use App\Models\Product;
@@ -13,24 +12,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-class ProductController extends Controller
+class ProductController extends BaseController
 {
     public function __construct()
     {
         //
     }
 
+    /**
+     * Show products data
+     * 
+     * @return JsonResponse
+     */
     public function index(): JsonResponse
     {
         $products = Product::all();
 
-        if (empty($products)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data not found',
-                'data' => []
-            ], 200);
-        }
+        if (empty($products)) return $this->sendError('Data not found.', 200);
 
         foreach ($products as $product) {
             $category = $product->categoryProduct->category;
@@ -43,24 +41,21 @@ class ProductController extends Controller
             unset($product->categoryProduct);
         }
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Inquiry data success',
-            'data' => $products
-        ], 200);
+        return $this->sendResponse($products, 'Inquiry data success.');
     }
 
+    /**
+     * Show product by id
+     * 
+     * @param integer $id
+     * 
+     * @return JsonResponse
+     */
     public function getById($id): JsonResponse
     {
         $product = Product::find($id);
 
-        if (empty($product)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data not found',
-                'data' => []
-            ], 200);
-        }
+        if (empty($product)) return $this->sendError('Data not found.', 200);
 
         $category = $product->categoryProduct->category;
         $product->category = $category;
@@ -71,13 +66,16 @@ class ProductController extends Controller
         unset($product->productImage);
         unset($product->categoryProduct);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Inquiry data success',
-            'data' => $product
-        ], 200);
+        return $this->sendResponse($product, 'Inquiry data success.');
     }
 
+    /**
+     * Store data to db
+     * 
+     * @param Request $request
+     * 
+     * @return JsonResponse
+     */
     public function store(Request $request): JsonResponse
     {
         // validate request
@@ -89,13 +87,9 @@ class ProductController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $errorMsg = $validator->errors()->all();
+            $errorMsg = implode(' | ', $validator->errors()->all());
 
-            return response()->json([
-                "status" => false,
-                "message" => implode(" | ", $errorMsg),
-                "data" => []
-            ], 400);
+            return $this->sendError($errorMsg);
         }
 
         // save image
@@ -107,6 +101,7 @@ class ProductController extends Controller
 
         // insert data to db
         DB::beginTransaction();
+
         try {
             $productData = [
                 'name' => $request->name,
@@ -149,11 +144,7 @@ class ProductController extends Controller
             unset($product->productImage);
             unset($product->categoryProduct);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Data created succesfully.',
-                'data' => $product
-            ], 201);
+            return $this->sendResponse($product, 'Data created successfully.', 201);
             //
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -163,19 +154,23 @@ class ProductController extends Controller
                 'trace' => $th->getTraceAsString()
             ]);
 
-            return response()->json([
-                "status" => false,
-                "message" => 'Failed insert data',
-                "data" => []
-            ], 500);
+            return $this->sendError('Failed insert data', 500);
         }
     }
 
+    /**
+     * Update data by id
+     * 
+     * @param Request $request
+     * @param integer $id
+     * 
+     * @return JsonResponse
+     */
     public function update(Request $request, $id): JsonResponse
     {
         // validate request
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
+            'name' => 'string',
             'description' => 'string',
             'enable' => 'boolean',
             'category_id' => 'integer',
@@ -183,28 +178,19 @@ class ProductController extends Controller
         ]);
 
         if ($validator->fails()) {
-            $errorMsg = $validator->errors()->all();
+            $errorMsg = implode(' | ', $validator->errors()->all());
 
-            return response()->json([
-                "status" => false,
-                "message" => implode(" | ", $errorMsg),
-                "data" => []
-            ], 400);
+            return $this->sendError($errorMsg);
         }
 
         // inquiry product data
         $product = Product::find($id);
 
-        if (empty($product)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data not found',
-                'data' => []
-            ], 200);
-        }
+        if (empty($product)) return $this->sendError('Data not found.', 200);
 
         // update data to db
         DB::beginTransaction();
+
         try {
             $productData = [
                 'name' => empty($request->name) ? $product->name : $request->name,
@@ -256,11 +242,7 @@ class ProductController extends Controller
             unset($product->productImage);
             unset($product->categoryProduct);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Data updated succesfully.',
-                'data' => $product
-            ], 200);
+            return $this->sendResponse($product, 'Data updated successfully.');
             //
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -270,11 +252,7 @@ class ProductController extends Controller
                 'trace' => $th->getTraceAsString()
             ]);
 
-            return response()->json([
-                "status" => false,
-                "message" => 'Failed update data',
-                "data" => []
-            ], 500);
+            return $this->sendError('Failed update data', 500);
         }
     }
 }
