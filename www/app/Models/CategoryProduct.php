@@ -10,6 +10,10 @@ class CategoryProduct extends Model
 {
     use HasFactory;
 
+    protected $guarded = [
+        'created_at', 'updated_at'
+    ];
+
     public function category(): BelongsTo {
         return $this->belongsTo(Category::class, 'category_id');
     }

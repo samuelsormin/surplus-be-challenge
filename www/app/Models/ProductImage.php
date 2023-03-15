@@ -10,6 +10,10 @@ class ProductImage extends Model
 {
     use HasFactory;
 
+    protected $guarded = [
+        'created_at', 'updated_at'
+    ];
+
     public function image(): BelongsTo
     {
         return $this->belongsTo(Image::class, 'image_id');

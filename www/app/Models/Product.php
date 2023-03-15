@@ -10,6 +10,10 @@ class Product extends Model
 {
     use HasFactory;
 
+    protected $guarded = [
+        'created_at', 'updated_at'
+    ];
+
     public function categoryProduct(): HasOne
     {
         return $this->hasOne(CategoryProduct::class, 'product_id');
