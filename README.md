@@ -21,7 +21,10 @@ $ docker exec -it surplus-app /bin/bash
 ```sh
 $ cp .env.example .env
 ```
-- Generate the application key
+- To generate the application key, we first need to install all the laravel package and then generate the key.
+```sh
+$ composer install
+```
 ```sh
 $ php artisan key:generate
 ```
@@ -36,9 +39,6 @@ DB_PASSWORD=secret
 ```
 - We can run all this following commands on the container's terminal to run the project.
 
-```sh
-$ composer install
-```
 ```sh
 $ php artisan migrate
 ```
