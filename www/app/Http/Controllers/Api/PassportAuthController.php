@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -37,7 +38,13 @@ class PassportAuthController extends BaseController
             return $this->sendError($errorMsg);
         }
 
+        // check if email exist
+        $isUserExist = User::where('email', $request->email)->first();
+        if ($isUserExist) return $this->sendError('Email already registered.', 200);
+
         // save user's data
+        DB::beginTransaction();
+
         try {
             $userData = [
                 'name' => $request->name,
@@ -49,9 +56,13 @@ class PassportAuthController extends BaseController
 
             $token = $user->createToken('SurplusPassportAuth')->accessToken;
 
+            DB::commit();
+
             return $this->sendResponse($token, 'Register success.');
             //
         } catch (\Throwable $th) {
+            DB::rollBack();
+
             Log::error('Failed register user', [
                 'msg' => $th->getMessage(),
                 'trace' => $th->getTraceAsString()
