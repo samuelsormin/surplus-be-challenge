@@ -213,9 +213,9 @@ class ProductController extends BaseController
                     'file' => sprintf('%s%s', $path, $filename),
                     'enable' => 1
                 ];
-                
+
                 $image = Image::find($product->productImage->image->id);
-                
+
                 $image->update($imageData);
             }
 
@@ -253,6 +253,44 @@ class ProductController extends BaseController
             ]);
 
             return $this->sendError('Failed update data', 500);
+        }
+    }
+
+    /**
+     * Delete data from db
+     * 
+     * @param integer $id
+     * 
+     * @return JsonResponse
+     */
+    public function destroy($id): JsonResponse
+    {
+        DB::beginTransaction();
+
+        try {
+            $product = Product::find($id);
+
+            CategoryProduct::find($product->categoryProduct->id)->delete();
+
+            Image::find($product->productImage->image->id)->delete();
+
+            ProductImage::find($product->productImage->id)->delete();
+
+            $product->delete();
+
+            DB::commit();
+
+            return $this->sendResponse([], 'Data deleted successfully.');
+            //
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            
+            Log::error('Failed delete data', [
+                'msg' => $th->getMessage(),
+                'trace' => $th->getTraceAsString()
+            ]);
+
+            return $this->sendError('Failed delete data', 500);
         }
     }
 }
