@@ -53,12 +53,15 @@ class PassportAuthController extends BaseController
             ];
 
             $user = User::create($userData);
-
             $token = $user->createToken('SurplusPassportAuth')->accessToken;
 
             DB::commit();
 
-            return $this->sendResponse($token, 'Register success.');
+            return response()->json([
+                'status' => true,
+                'message' => 'Register success.',
+                'token' => $token
+            ]);
             //
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -102,7 +105,11 @@ class PassportAuthController extends BaseController
         if (auth()->attempt($loginData)) {
             $token = auth()->user()->createToken('SurplusPassportAuth')->accessToken;
 
-            return $this->sendResponse($token, 'Logged in.');
+            return response()->json([
+                'status' => true,
+                'message' => 'Logged in.',
+                'token' => $token
+            ]);
         }
 
         return $this->sendError('Log in failed.');
